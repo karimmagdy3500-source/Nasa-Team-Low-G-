@@ -305,61 +305,151 @@ with tab2:
   else:
     st.warning("⚠️ لم يتم العثور على صور مرفوعة في المجلد الرئيسي.")
 
-# --- Tab 3 ---
+# --- Tab 3: Low G Autonomous Intelligence Agent (Local & Fast) ---
 with tab3:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
-      " 15px;'>🤖 NASA OpenAI GPT Intelligence Agent</h3>",
+      " 15px;'>🤖 Low G Autonomous Intelligence Agent</h3>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;'>مساعد"
+      " ذكي محلي بالكامل (Local Autonomous Agent) متصل مباشرة بقاعدة البيانات،"
+      " تقارير Power BI، ومعارف ناسا بدون أي حاجة لمفاتيح خارجية.</p>",
       unsafe_allow_html=True,
   )
 
-  # محاولة تشغيل OpenAI أو الاعتماد على المساعد الذكي المحلي تلقائياً لتجنب أي توقف
-  try:
-    from openai import OpenAI
+  # تهيئة سجل الشات المحلي
+  if "local_agent_msgs" not in st.session_state:
+    st.session_state.local_agent_msgs = [{
+        "role": "assistant",
+        "content": (
+            "أهلاً بك يا بشمهندس كريم! أنا **Low G Autonomous Agent** المحلي."
+            " جاهز للرد الفوري وتحليل التيليمتري، الرد عن أعضاء التيم، أو شرح"
+            " فيزياء الاحتراق في الجاذبية الصغرى بسلاسة وبدون أي مفاتيح API!"
+        ),
+    }]
 
-    api_key = (
-        st.secrets.get("OPENAI_API_KEY", "")
-        if hasattr(st, "secrets")
-        else ""
-    )
-    if not api_key:
-      api_key = st.text_input("أدخل مفتاح OpenAI API Key (اختياري):", type="password")
+  # عرض الرسائل السابقة
+  for msg in st.session_state.local_agent_msgs:
+    with st.chat_message(msg["role"]):
+      st.markdown(msg["content"])
 
-    if api_key:
-      client = OpenAI(api_key=api_key)
-      if "openai_msgs" not in st.session_state:
-        st.session_state.openai_msgs = [{
-            "role": "system",
-            "content": (
-                "أنت خبير ذكاء اصطناعي ومساعد رسمي لفريق Low G في تحدي ناسا سبايس"
-                " أبس (Flame in Freefall). مصمم الداشبورد هو المهندس كريم مجدي."
-            ),
-        }]
-      user_q = st.chat_input("اسأل GPT عن التيليمتري أو سلوك الحريق...")
-      if user_q:
-        st.session_state.openai_msgs.append({"role": "user", "content": user_q})
-        with st.chat_message("user"):
-          st.markdown(user_q)
-        with st.chat_message("assistant"):
-          res = client.chat.completions.create(
-              model="gpt-4o-mini", messages=st.session_state.openai_msgs
-          )
-          reply = res.choices[0].message.content
-          st.markdown(reply)
-          st.session_state.openai_msgs.append(
-              {"role": "assistant", "content": reply}
-          )
-    else:
-      st.info(
-          "💡 **وضع الذكاء التلقائي (Local AI Agent):** المنصة جاهزة وتعمل بكامل"
-          " قوتها. لإدخال مفتاح GPT يمكنك وضعه أعلى، أو الاستمتاع بالتحليل الفوري"
-          " لقاعدة البيانات مباشرة."
-      )
-  except:
-    st.info(
-        "🤖 **Low G Multi-Source Agent:** جاهز للإجابة وتحليل التيليمتري وبيانات"
-        " الفريق."
+  # استقبال المدخلات من المستخدم
+  if user_prompt := st.chat_input(
+      "اسأل عن التيليمتري، التجارب، التيم، أو سلوك الحريق في الفضاء..."
+  ):
+    st.session_state.local_agent_msgs.append(
+        {"role": "user", "content": user_prompt}
     )
+    with st.chat_message("user"):
+      st.markdown(user_prompt)
+
+    with st.chat_message("assistant"):
+      with st.spinner("جاري تحليل الطلب والبحث في قواعد البيانات المحلية..."):
+        query_lower = user_prompt.lower()
+        response_chunks = []
+
+        # 1. البحث التلقائي في بيانات الإكسيل (التيليمتري)
+        data_found = False
+        for col in df.columns:
+          matches = df[
+              df[col].astype(str).str.lower().str.contains(query_lower, na=False)
+          ]
+          if not matches.empty and len(query_lower) > 1:
+            data_found = True
+            response_chunks.append(
+                f"📊 **[نتائج التيليمتري وقاعدة البيانات (Excel)]**\nتم العثور"
+                f" على تطابقات مباشرة لسؤالك:"
+            )
+            for _, row in matches.head(3).iterrows():
+              row_str = " | ".join([f"**{k}**: {v}" for k, v in row.items()])
+              response_chunks.append(- `{row_str}`)
+            break
+
+        # 2. الاستعلام عن فريق العمل (Team Low G)
+        if any(
+            k in query_lower
+            for k in [
+                "team",
+                "فريق",
+                "تيم",
+                "كريم",
+                "karim",
+                "أعضاء",
+                "members",
+                "abdelaziz",
+                "arwa",
+            ]
+        ):
+          response_chunks.append(
+              "🚀 **[هيكل فريق العمل - Team Low G]**\n- **قائد ومصمم الداشبورد:"
+              "** Eng. Karim Magdy\n- **أعضاء الفريق (Honorable"
+              " Mentions):** Eng. Abdelaziz, Eng. Arwa, Eng. Karim, Eng."
+              " Hashem, Eng. Amina\n- **الحدث:** NASA Space Apps Challenge"
+              " 2026."
+          )
+
+        # 3. الاستعلام عن تقارير Power BI
+        if any(
+            k in query_lower
+            for k in [
+                "power bi",
+                "dashboard",
+                "report",
+                "صور",
+                "داشبورد",
+                "تقارير",
+            ]
+        ):
+          response_chunks.append(
+              "📈 **[تقارير Power BI التنفيذية]**\nالمنصة مرتبطة بلوحات"
+              " تحليلية متقدمة تعرض مقارنات انتشار اللهب وتغيرات الأكسجين."
+              " يمكنك استعراضها مباشرة من تبويب **Power BI Visual Views**."
+          )
+
+        # 4. علوم الفضاء والاحتراق (Microgravity Science & NASA Challenge)
+        if any(
+            k in query_lower
+            for k in [
+                "combustion",
+                "fire",
+                "safety",
+                "oxygen",
+                "gravity",
+                "احتراق",
+                "حريق",
+                "أكسجين",
+                "جاذبية",
+                "ناسا",
+                "freefall",
+                "flame",
+            ]
+        ):
+          response_chunks.append(
+              "🔥 **[قاعدة معارف ناسا لاحتراق الفضاء (Flame in"
+              " Freefall)]**\n- في بيئة الجاذبية الصغرى (0G)، تفتقر"
+              " الحرائق إلى ظاهرة الحمل الحراري الأرضي (Buoyancy)، مما يجعل"
+              " اللهب يتخذ شكلاً كروياً ونقياً.\n- تعتمد سرعة انتشار اللهب"
+              " بشكل أساسي على تركيز الأكسجين والضغط المحيط في الكبسولة.\n-"
+              " توفر منصتنا مراقبة تنبؤية فورية لضمان سلامة الرواد والكبسولة."
+          )
+
+        # إذا لم يتم العثور على كلمة مفتاحية محددة
+        if not response_chunks:
+          response_chunks.append(
+              "💡 **[Low G Autonomous Agent]**\nلقد قمت بتحليل طلبك بنجاح."
+              " يمكنك سؤالي عن:\n1. تفاصيل أي تجربة أو رقم تيليمتري في ملف"
+              " الإكسيل.\n2. أعضاء فريق Low G ومصمم النظام (Eng. Karim"
+              " Magdy).\n3. تقارير ومؤشرات Power BI.\n4. فيزياء الاحتراق"
+              " في الجاذبية الصغرى ومعايير ناسا."
+          )
+
+        final_bot_reply = "\n\n---\n\n".join(response_chunks)
+        st.markdown(final_bot_reply)
+        st.session_state.local_agent_msgs.append(
+            {"role": "assistant", "content": final_bot_reply}
+        )
 
 # 7. Honorable Mentions
 st.markdown(
