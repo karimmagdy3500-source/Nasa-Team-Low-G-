@@ -365,7 +365,7 @@ with tab3:
             )
             for _, row in matches.head(3).iterrows():
               row_str = " | ".join([f"**{k}**: {v}" for k, v in row.items()])
-              response_chunks.append(- `{row_str}`)
+              response_chunks.append(- {row_str})
             break
 
         # 2. الاستعلام عن فريق العمل (Team Low G)
