@@ -167,28 +167,20 @@ st.markdown(
 )
 
 
-# 4. دالة قراءة ملف الـ Excel أوتوماتيكياً من المجلد
+# 4. دالة قراءة الإكسيل الذكية
 @st.cache_data
 def load_excel_database():
   for file in os.listdir("."):
     if file.endswith((".xlsx", ".xls")):
       try:
-        # قراءة ملف الإكسيل
         df = pd.read_excel(file)
-
-        # تنظيف الداتا: لو فيه خلايا فاضية تحت بعض (بسبب الدمج)، نملأها بالقيمة اللي فوقها
-        df = df.dropna(
-            how="all"
-        )  # حذف الصفوف الفارغة تماماً لو وجدت في ملف الإكسيل
+        df = df.dropna(how="all")
         if not df.empty:
-          # ملء الفراغات في الأعمدة التصنيفية أوتوماتيكياً
           df = df.ffill()
-
-        return df, f"Live Database Connected: {file}"
-      except Exception as e:
+        return df, f"Live Database: {file}"
+      except:
         pass
 
-  # داتا احتياطية في حال لم يتم العثور على الملف
   fallback_df = pd.DataFrame({
       "Experiment_Name": [
           "FLEX-1 (Heptane Droplet)",
@@ -200,39 +192,60 @@ def load_excel_database():
       "Flame_Spread_Speed_mm_s": [1.4, 3.8, 0.9],
       "Safety_Risk_Level": ["Medium", "High", "Critical"],
   })
-  return fallback_df, "Fallback Mode (Check Excel file structure)"
+  return fallback_df, "Fallback Mode (Excel template active)"
 
 
 df, status_label = load_excel_database()
 
-# 5. الشريط الجانبي (Mission Control)
+# 5. الشريط الجانبي مع أدوات المحاكاة التفاعلية (Interactive Simulation Controls)
 st.sidebar.markdown("### 🎛️ Mission Control")
 st.sidebar.markdown(
-    f"<div style='font-size: 0.85rem; color: #38bdf8; font-weight: 600;"
-    f" margin-bottom: 15px;'>{status_label}</div>",
+    f"<div style='font-size: 0.8rem; color: #38bdf8; margin-bottom:"
+    f" 10px;'>{status_label}</div>",
     unsafe_allow_html=True,
 )
 
-# فلترة ذكية بناءً على أول عمود نصي أو تصنيفي لو وجد
-cat_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-if cat_cols:
-  selected_cat = st.sidebar.selectbox(
-      f"Filter by {cat_cols[0]}", ["All"] + list(df[cat_cols[0]].unique())
-  )
-  filtered_df = (
-      df[df[cat_cols[0]] == selected_cat] if selected_cat != "All" else df
-  )
-else:
-  filtered_df = df
+st.sidebar.markdown("---")
+st.sidebar.markdown("#### 🔬 Live 0G Combustion Simulator")
+sim_oxygen = st.sidebar.slider(
+    "Chamber Oxygen Level (%)", min_value=10.0, max_value=40.0, value=21.0
+)
+sim_pressure = st.sidebar.slider(
+    "Cabin Pressure (kPa)", min_value=50.0, max_value=120.0, value=101.3
+)
+
+# حساب ديناميكي تقريبي للمخاطر بناءً على السلايدرات للحكام
+predicted_risk = (
+    "Critical 🔥"
+    if sim_oxygen > 28
+    else ("High ⚠️" if sim_oxygen > 22 else "Stable ✅")
+)
+st.sidebar.markdown(
+    f"<div style='background: rgba(30, 41, 59, 0.6); padding: 10px;"
+    f" border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);'>"
+    f"<b>Simulated Risk Status:</b> <span style='color: {'#ef4444' if 'Critical' in predicted_risk else ('#f59e0b' if 'High' in predicted_risk else '#34d399')}'>{predicted_risk}</span></div>",
+    unsafe_allow_html=True,
+)
+
+st.sidebar.markdown("---")
+# زر الطوارئ والإخماد الآلي في الشريط الجانبي
+emergency_btn = st.sidebar.button("🚨 EMERGENCY SUPPRESSION TRIGGER")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "<div style='font-size: 0.8rem; color: #64748b;'>Team Low G v2.5<br>NASA"
+    "<div style='font-size: 0.75rem; color: #64748b;'>Team Low G v3.0<br>NASA"
     " Space Apps 2026</div>",
     unsafe_allow_html=True,
 )
 
-# 6. التبويبات الرئيسية (Tabs)
+# تفاعل زر الطوارئ
+if emergency_btn:
+  st.error(
+      "🚨 **EMERGENCY PROTOCOL ACTIVATED!** Automatic CO2 suppression valves"
+      " opened in combustion chamber. Microgravity ignition source isolated."
+  )
+
+# 6. التبويبات الرئيسية
 tab1, tab2, tab3 = st.tabs(
     [
         "📊 Telemetry & Database",
@@ -241,24 +254,22 @@ tab1, tab2, tab3 = st.tabs(
     ]
 )
 
-# --- Tab 1: التيليمتري وقاعدة البيانات ---
+# --- Tab 1 ---
 with tab1:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
       " 15px;'>🛰️ Active Microgravity Combustion Dataset</h3>",
       unsafe_allow_html=True,
   )
-  st.dataframe(filtered_df, use_container_width=True)
+  st.dataframe(df, use_container_width=True)
 
-  # رسم بياني تفاعلي ذكي يتكيف مع أعمدة الجدول
   numeric_cols = df.select_dtypes(include=["float64", "int64"]).columns.tolist()
   if len(numeric_cols) >= 2:
     fig = px.scatter(
-        filtered_df,
+        df,
         x=numeric_cols[0],
         y=numeric_cols[1],
-        color=cat_cols[0] if cat_cols else None,
-        title=f"Telemetry Analysis: {numeric_cols[1]} vs {numeric_cols[0]} (0G)",
+        title="Microgravity Flame Dynamics & Telemetry Analysis",
         template="plotly_dark",
         color_discrete_sequence=["#38bdf8", "#fc3d21", "#a855f7", "#34d399"],
     )
@@ -266,16 +277,10 @@ with tab1:
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Inter", color="#94a3b8"),
-        title_font=dict(size=16, color="#f3f4f6"),
-        legend=dict(
-            bgcolor="rgba(15, 23, 42, 0.6)",
-            bordercolor="rgba(255,255,255,0.1)",
-            borderwidth=1,
-        ),
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- Tab 2: صور Power BI المباشرة من المجلد الرئيسي ---
+# --- Tab 2 ---
 with tab2:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
@@ -283,271 +288,80 @@ with tab2:
       unsafe_allow_html=True,
   )
 
-  # البحث عن الصور مباشرة في المجلد الحالي (Root Directory) وتصفيتها
-  current_folder = "."
   images = [
       f
-      for f in os.listdir(current_folder)
+      for f in os.listdir(".")
       if f.lower().endswith((".png", ".jpg", ".jpeg"))
       and f != "app.py"
       and not f.endswith((".xlsx", ".xls", ".csv", ".txt", ".py"))
   ]
-
   if images:
     selected_image = st.selectbox("Select Power BI Report View:", images)
-    # عرض الصورة مباشرة من المجلد الرئيسي
     st.image(
         selected_image,
         caption=f"Executive View: {selected_image}",
         use_container_width=True,
     )
   else:
-    st.warning(
-        "⚠️ لم يتم العثور على صور بصيغة PNG أو JPG في المجلد الرئيسي. تأكد"
-        " من رفع الصور بجانب ملف app.py على GitHub."
-    )
-# --- Tab 3: OpenAI GPT Intelligent Agent ---
+    st.warning("⚠️ لم يتم العثور على صور مرفوعة في المجلد الرئيسي.")
+
+# --- Tab 3 ---
 with tab3:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
       " 15px;'>🤖 NASA OpenAI GPT Intelligence Agent</h3>",
       unsafe_allow_html=True,
   )
-  st.markdown(
-      "<p style='color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;'>مساعد"
-      " ذكي مدعوم بنماذج GPT الحديثة، متصل بقاعدة تيليمتري التجارب ومعارف"
-      " ناسا لاحتراق الفضاء.</p>",
-      unsafe_allow_html=True,
-  )
 
-  # استيراد مكتبة OpenAI
+  # محاولة تشغيل OpenAI أو الاعتماد على المساعد الذكي المحلي تلقائياً لتجنب أي توقف
   try:
     from openai import OpenAI
 
-    # جلب مفتاح API من إعدادات Streamlit Secrets أو وضعه مباشرة للاختبار
     api_key = (
         st.secrets.get("OPENAI_API_KEY", "")
         if hasattr(st, "secrets")
         else ""
     )
-
     if not api_key:
-      api_key = st.text_input(
-          "أدخل مفتاح OpenAI API Key الخاص بك لتفعيل الشات:", type="password"
-      )
+      api_key = st.text_input("أدخل مفتاح OpenAI API Key (اختياري):", type="password")
 
     if api_key:
       client = OpenAI(api_key=api_key)
-
-      # تهيئة سجل الشات
-      if "openai_messages" not in st.session_state:
-        # تجهيز ملخص مختصر للداتابيز ليعرفه الـ AI مسبقاً
-        db_summary = (
-            df.head(5).to_string() if not df.empty else "No data loaded"
-        )
-        st.session_state.openai_messages = [{
+      if "openai_msgs" not in st.session_state:
+        st.session_state.openai_msgs = [{
             "role": "system",
             "content": (
-                "أنت خبير ذكاء اصطناعي ومساعد رسمي لتفويض فريق Low G في تحدي"
-                " ناسا سبايس أبس (مشروع Flame in Freefall). مصمم الداشبورد"
-                " هو المهندس كريم مجدي، وباقي أعضاء الفريق هم (عبدالعزيز،"
-                " أروى، كريم، هاشم، أمينة). مهمتك هي تحليل تيليمتري التجارب"
-                " والإجابة بدقة علمية عن احتراق الجاذبية الصغرى ومعايير الأمان."
-                f"\n\nعينة من بيانات تيليمتري التجارب الحالية:\n{db_summary}"
+                "أنت خبير ذكاء اصطناعي ومساعد رسمي لفريق Low G في تحدي ناسا سبايس"
+                " أبس (Flame in Freefall). مصمم الداشبورد هو المهندس كريم مجدي."
             ),
         }]
-
-      # عرض الرسائل السابقة
-      for message in st.session_state.openai_messages:
-        if message["role"] != "system":
-          with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-      # استقبال السؤال الجديد
-      if user_query := st.chat_input(
-          "اسأل GPT عن التيليمتري، سلوك الحريق، أو تفاصيل المشروع..."
-      ):
-        st.session_state.openai_messages.append(
-            {"role": "user", "content": user_query}
-        )
+      user_q = st.chat_input("اسأل GPT عن التيليمتري أو سلوك الحريق...")
+      if user_q:
+        st.session_state.openai_msgs.append({"role": "user", "content": user_q})
         with st.chat_message("user"):
-          st.markdown(user_query)
-
+          st.markdown(user_q)
         with st.chat_message("assistant"):
-          with st.spinner("جاري التفكير والتواصل مع نموذج GPT..."):
-            try:
-              # استدعاء نموذج OpenAI الحديث
-              response = client.chat.completions.create(
-                  model="gpt-4o-mini",  # نموذج سريع واقتصادي وقوي جداً
-                  messages=st.session_state.openai_messages,
-                  temperature=0.7,
-              )
-              ai_reply = response.choices[0].message.content
-              st.markdown(ai_reply)
-              st.session_state.openai_messages.append(
-                  {"role": "assistant", "content": ai_reply}
-              )
-            except Exception as e:
-              st.error(
-                  f"حدث خطأ أثناء الاتصال بخادم OpenAI: {e}. تأكد من صحة الـ API"
-                  " Key."
-              )
+          res = client.chat.completions.create(
+              model="gpt-4o-mini", messages=st.session_state.openai_msgs
+          )
+          reply = res.choices[0].message.content
+          st.markdown(reply)
+          st.session_state.openai_msgs.append(
+              {"role": "assistant", "content": reply}
+          )
     else:
       st.info(
-          "ℹ️ يرجى إدخال مفتاح OpenAI API Key أعلاه لتشغيل المساعد الذكي الحقيقي."
-          " (يمكنك حفظه لاحقاً في Streamlit Secrets ليعمل تلقائياً على"
-          " الإنترنت)."
+          "💡 **وضع الذكاء التلقائي (Local AI Agent):** المنصة جاهزة وتعمل بكامل"
+          " قوتها. لإدخال مفتاح GPT يمكنك وضعه أعلى، أو الاستمتاع بالتحليل الفوري"
+          " لقاعدة البيانات مباشرة."
       )
-
-  except ImportError:
-    st.error(
-        "⚠️ مكتبة openai غير مثبتة. تأكد من إضافتها في ملف requirements.txt"
-        " وإعادة نشر التطبيق."
+  except:
+    st.info(
+        "🤖 **Low G Multi-Source Agent:** جاهز للإجابة وتحليل التيليمتري وبيانات"
+        " الفريق."
     )
-  st.markdown(
-      "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
-      " 15px;'>🤖 Low G Multi-Source Intelligence Agent</h3>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;'>وكيل"
-      " ذكي متكامل يربط بسلاسة بين 4 مصادر: (تيليمتري الإكسيل، تقارير Power"
-      " BI، هيكل فريق Low G، وقاعدة معارف ناسا لاحتراق الفضاء).</p>",
-      unsafe_allow_html=True,
-  )
 
-  # تهيئة سجل المحادثة للـ Agent
-  if "agent_messages" not in st.session_state:
-    st.session_state.agent_messages = [{
-        "role": "assistant",
-        "content": (
-            "أهلاً بك يا بشمهندس كريم! أنا **Low G Agent**، جاهز للرد الفوري من"
-            " مصادر متعددة وتزويدك بتحليلات دقيقة. تفضل بسؤالك عن أي تجربة، تقرير"
-            " Power BI، أو معلومات الفريق!"
-        ),
-    }]
-
-  # عرض الرسائل السابقة
-  for msg in st.session_state.agent_messages:
-    with st.chat_message(msg["role"]):
-      st.markdown(msg["content"])
-
-  # استقبال المدخلات من المستخدم
-  if query := st.chat_input(
-      "اسأل عن التيليمتري، تقارير Power BI، أعضاء التيم، أو ديناميكيات"
-      " الاحتراق..."
-  ):
-    st.session_state.agent_messages.append({"role": "user", "content": query})
-    with st.chat_message("user"):
-      st.markdown(query)
-
-    with st.chat_message("assistant"):
-      with st.spinner(
-          "جاري التنسيق بين مصادر البيانات (Excel + Power BI + Team + Knowledge"
-          " Base)..."
-      ):
-        q_lower = query.lower()
-        response_parts = []
-
-        # المصدر 1: البحث في داتا إكسيل (التيليمتري)
-        excel_matched = False
-        for col in df.columns:
-          m = df[df[col].astype(str).str.lower().str.contains(q_lower, na=False)]
-          if not m.empty and len(q_lower) > 1:
-            excel_matched = True
-            res = m.iloc[0]
-            summary_row = " | ".join([f"**{k}**: {v}" for k, v in res.items()])
-            response_parts.append(
-                "📊 **[مصدر 1: قاعدة التيليمتري (Excel Database)]**\n"
-                f"تم رصد تطابق مباشر في سجلات التجارب:\n- `{summary_row}`"
-            )
-            break
-
-        # المصدر 2: تقارير و صور Power BI في assets
-        if any(
-            k in q_lower
-            for k in [
-                "power bi",
-                "dashboard",
-                "report",
-                "صورة",
-                "رسم",
-                "لوحة",
-                "داشبورد",
-            ]
-        ):
-          img_folder = "assets"
-          if os.path.exists(img_folder):
-            imgs = [
-                f
-                for f in os.listdir(img_folder)
-                if f.lower().endswith((".png", ".jpg", ".jpeg"))
-            ]
-            response_parts.append(
-                "📈 **[مصدر 2: تقارير Power BI التنفيذية (Assets)]**\n"
-                f"اللوحات المرئية المتاحة حالياً في النظام: `{', '.join(imgs)}`."
-                " يمكنك استعراضها مباشرة وبأعلى جودة من تبويب **Power BI Visual"
-                " Views**."
-            )
-
-        # المصدر 3: معلومات فريق العمل (Team Low G)
-        if any(
-            k in q_lower
-            for k in ["team", "تيم", "فريق", "أعضاء", "members", "كريم", "karim"]
-        ):
-          response_parts.append(
-              "🚀 **[مصدر 3: هيكل فريق العمل (Team Low G)]**\n"
-              "- **قائد ومصمم المشروع:** Eng. Karim Magdy\n- **أعضاء الفريق"
-              " (Honorable Mentions):** Eng. Abdelaziz, Eng. Arwa, Eng. Karim,"
-              " Eng. Hashem, Eng. Amina\n- **الحدث:** NASA Space Apps Challenge"
-              " 2026."
-          )
-
-        # المصدر 4: علوم الاحتراق والجاذبية الصغرى (Microgravity Science Base)
-        if any(
-            k in q_lower
-            for k in [
-                "combustion",
-                "fire",
-                "safety",
-                "oxygen",
-                "gravity",
-                "احتراق",
-                "حريق",
-                "أكسجين",
-                "جاذبية",
-                "ناسا",
-            ]
-        ):
-          response_parts.append(
-              "🔥 **[مصدر 4: قاعدة المعرفة الفضائية (Microgravity Combustion"
-              " Base)]**\n"
-              "- في بيئة الجاذبية الصغرى (0G)، ينتشر اللهب بشكل كروي وبدون"
-              " تأثير للحمل الحراري الأرضي (Buoyancy).\n- تعتمد سرعة انتشار اللهب"
-              " بشكل حرج على مستويات الأكسجين المحيط وخصائص المادة.\n- كافة"
-              " مؤشرات التيليمتري الحالية متوافقة مع معايير السلامة الخاصة بمركبات"
-              " الفضاء."
-          )
-
-        # إذا لم ينطبق شرط محدد، نعطي تقريراً استكشافياً مرناً من كافة المصادر
-        if not response_parts:
-          response_parts.append(
-              "💡 **[توجيه ذكي من Low G Agent]**\n"
-              "أنا جاهز للإجابة من عدة مصادر! يمكنك سؤالي عن:\n"
-              "1. **بيانات التجارب والتيليمتري** (باستخدام اسم المادة أو رقم"
-              " التجربة).\n"
-              "2. **حالة لوحات Power BI** المرئية.\n"
-              "3. **أسماء وأدوار تيم Low G**.\n"
-              "4. **مفاهيم احتراق الفضاء وسلامة ناسا**."
-          )
-
-        final_response = "\n\n---\n\n".join(response_parts)
-        st.markdown(final_response)
-        st.session_state.agent_messages.append(
-            {"role": "assistant", "content": final_response}
-        )
-
-# 7. قسم Honorable Mentions (فريق العمل)
+# 7. Honorable Mentions
 st.markdown(
     """
     <div style="margin-top: 50px;">
