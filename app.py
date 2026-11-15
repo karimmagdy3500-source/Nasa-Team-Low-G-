@@ -275,7 +275,7 @@ with tab1:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- Tab 2: صور Power BI من فولدر assets ---
+# --- Tab 2: صور Power BI المباشرة من المجلد الرئيسي ---
 with tab2:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
@@ -283,31 +283,29 @@ with tab2:
       unsafe_allow_html=True,
   )
 
-  image_folder = "assets"
-  if os.path.exists(image_folder):
-    images = [
-        f
-        for f in os.listdir(image_folder)
-        if f.lower().endswith((".png", ".jpg", ".jpeg"))
-    ]
-    if images:
-      selected_image = st.selectbox("Select Power BI Report View:", images)
-      img_path = os.path.join(image_folder, selected_image)
-      st.image(
-          img_path,
-          caption=f"Executive View: {selected_image}",
-          use_container_width=True,
-      )
-    else:
-      st.warning(
-          f"⚠️ فولدر '{image_folder}' لا يحتوي على صور بصيغة PNG أو JPG."
-      )
+  # البحث عن الصور مباشرة في المجلد الحالي (Root Directory) وتصفيتها
+  current_folder = "."
+  images = [
+      f
+      for f in os.listdir(current_folder)
+      if f.lower().endswith((".png", ".jpg", ".jpeg"))
+      and f != "app.py"
+      and not f.endswith((".xlsx", ".xls", ".csv", ".txt", ".py"))
+  ]
+
+  if images:
+    selected_image = st.selectbox("Select Power BI Report View:", images)
+    # عرض الصورة مباشرة من المجلد الرئيسي
+    st.image(
+        selected_image,
+        caption=f"Executive View: {selected_image}",
+        use_container_width=True,
+    )
   else:
     st.warning(
-        f"⚠️ لم يتم العثور على فولدر باسم '{image_folder}'. تأكد من إنشاء الفولدر"
-        " ووضع صور الداشبورد داخله."
+        "⚠️ لم يتم العثور على صور بصيغة PNG أو JPG في المجلد الرئيسي. تأكد"
+        " من رفع الصور بجانب ملف app.py على GitHub."
     )
-
 # --- Tab 3: مساعد الذكاء الاصطناعي التفاعلي الذكي ---
 # --- Tab 3: Low G Multi-Source Intelligence Agent ---
 with tab3:
