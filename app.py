@@ -305,8 +305,7 @@ with tab2:
   else:
     st.warning("⚠️ لم يتم العثور على صور مرفوعة في المجلد الرئيسي.")
 
-# --- Tab 3: Low G Autonomous Intelligence Agent (Local & Fast) ---
-# --- Tab 3: Low G Autonomous Intelligence Agent (Local & Fast) ---
+# --- Tab 3: Low G Autonomous Intelligence Agent (Optimized & Foolproof) ---
 with tab3:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
@@ -315,62 +314,63 @@ with tab3:
   )
   st.markdown(
       "<p style='color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;'>مساعد"
-      " ذكي محلي بالكامل (Local Autonomous Agent) متصل مباشرة بقاعدة البيانات،"
-      " تقارير Power BI، ومعارف ناسا بدون أي حاجة لمفاتيح خارجية.</p>",
+      " ذكي محلي متصل بقاعدة البيانات، تقارير Power BI، ومعارف ناسا للاحتراق في"
+      " الجاذبية الصغرى.</p>",
       unsafe_allow_html=True,
   )
 
-  # تهيئة سجل الشات المحلي
+  # تهيئة سجل الشات
   if "local_agent_msgs" not in st.session_state:
     st.session_state.local_agent_msgs = [{
         "role": "assistant",
         "content": (
-            "أهلاً بك يا بشمهندس كريم! أنا **Low G Autonomous Agent** المحلي."
-            " جاهز للرد الفوري وتحليل التيليمتري، الرد عن أعضاء التيم، أو شرح"
-            " فيزياء الاحتراق في الجاذبية الصغرى بسلاسة وبدون أي مفاتيح API!"
+            "أهلاً بك يا بشمهندس كريم! أنا **Low G Agent** المحلي. جاهز للرد"
+            " الفوري وتحليل التيليمتري، الإجابة عن أعضاء التيم، أو شرح فيزياء"
+            " الاحتراق في الفضاء. تفضل بسؤالك!"
         ),
     }]
 
-  # عرض الرسائل السابقة
+  # عرض رسائل الشات السابقة
   for msg in st.session_state.local_agent_msgs:
     with st.chat_message(msg["role"]):
       st.markdown(msg["content"])
 
-  # استقبال المدخلات من المستخدم
+  # استقبال السؤال من المستخدم
   if user_prompt := st.chat_input(
-      "اسأل عن التيليمتري، التجارب، التيم، أو سلوك الحريق في الفضاء..."
+      "اسأل عن التيليمتري، التجارب، التيم، أو سلوك الحريق..."
   ):
+    # إضافة وعرض رسالة المستخدم فوراً
     st.session_state.local_agent_msgs.append(
         {"role": "user", "content": user_prompt}
     )
     with st.chat_message("user"):
       st.markdown(user_prompt)
 
+    # توليد الرد من المساعد
     with st.chat_message("assistant"):
-      with st.spinner("جاري تحليل الطلب والبحث في قواعد البيانات المحلية..."):
-        query_lower = user_prompt.lower()
+      with st.spinner("جاري معالجة البيانات والرد..."):
+        q_lower = user_prompt.lower()
         response_chunks = []
 
-        # 1. البحث التلقائي في بيانات الإكسيل (التيليمتري)
-        data_found = False
+        # 1. البحث في إكسيل التيليمتري
+        matched_rows = 0
         for col in df.columns:
           matches = df[
-              df[col].astype(str).str.lower().str.contains(query_lower, na=False)
+              df[col].astype(str).str.lower().str.contains(q_lower, na=False)
           ]
-          if not matches.empty and len(query_lower) > 1:
-            data_found = True
+          if not matches.empty and len(q_lower) > 1:
+            matched_rows += len(matches)
             response_chunks.append(
-                f"📊 **[نتائج التيليمتري وقاعدة البيانات (Excel)]**\nتم العثور"
-                f" على تطابقات مباشرة لسؤالك:"
+                f"📊 **[بيانات تيليمتري المطابقة من الإكسيل]:**"
             )
-            for _, row in matches.head(3).iterrows():
-              row_str = " | ".join([f"**{k}**: {v}" for k, v in row.items()])
-              response_chunks.append(- {row_str})
+            for _, r in matches.head(2).iterrows():
+              row_summary = " | ".join([f"**{k}**: {v}" for k, v in r.items()])
+              response_chunks.append(f"- `{row_summary}`")
             break
 
-        # 2. الاستعلام عن فريق العمل (Team Low G)
+        # 2. السؤال عن الفريق أو المصمم
         if any(
-            k in query_lower
+            k in q_lower
             for k in [
                 "team",
                 "فريق",
@@ -381,19 +381,21 @@ with tab3:
                 "members",
                 "abdelaziz",
                 "arwa",
+                "hashem",
+                "amina",
             ]
         ):
           response_chunks.append(
-              "🚀 **[هيكل فريق العمل - Team Low G]**\n- **قائد ومصمم الداشبورد:"
-              "** Eng. Karim Magdy\n- **أعضاء الفريق (Honorable"
-              " Mentions):** Eng. Abdelaziz, Eng. Arwa, Eng. Karim, Eng."
-              " Hashem, Eng. Amina\n- **الحدث:** NASA Space Apps Challenge"
-              " 2026."
+              "🚀 **[هيكل فريق العمل - Team Low G]**\n"
+              "- **قائد ومصمم الداشبورد:** Eng. Karim Magdy\n"
+              "- **أعضاء الفريق (Honorable Mentions):** Eng. Abdelaziz, Eng."
+              " Arwa, Eng. Karim, Eng. Hashem, Eng. Amina\n"
+              "- **الحدث:** NASA Space Apps Challenge 2026"
           )
 
-        # 3. الاستعلام عن تقارير Power BI
+        # 3. السؤال عن الداشبورد والـ Power BI
         if any(
-            k in query_lower
+            k in q_lower
             for k in [
                 "power bi",
                 "dashboard",
@@ -401,17 +403,19 @@ with tab3:
                 "صور",
                 "داشبورد",
                 "تقارير",
+                "visual",
             ]
         ):
           response_chunks.append(
-              "📈 **[تقارير Power BI التنفيذية]**\nالمنصة مرتبطة بلوحات"
-              " تحليلية متقدمة تعرض مقارنات انتشار اللهب وتغيرات الأكسجين."
-              " يمكنك استعراضها مباشرة من تبويب **Power BI Visual Views**."
+              "📈 **[تقارير Power BI التنفيذية]**\n"
+              "المنصة مرتبطة بلوحات تحليلية متقدمة تعرض مقارنات انتشار اللهب"
+              " وديناميكيات الأكسجين. يمكنك استعراضها مباشرة من تبويب **Power BI"
+              " Visual Views** أعلى الصفحة."
           )
 
-        # 4. علوم الفضاء والاحتراق (Microgravity Science & NASA Challenge)
+        # 4. علوم الفضاء والاحتراق (NASA Challenge Context)
         if any(
-            k in query_lower
+            k in q_lower
             for k in [
                 "combustion",
                 "fire",
@@ -425,31 +429,33 @@ with tab3:
                 "ناسا",
                 "freefall",
                 "flame",
+                "سلوك",
             ]
         ):
           response_chunks.append(
-              "🔥 **[قاعدة معارف ناسا لاحتراق الفضاء (Flame in"
-              " Freefall)]**\n- في بيئة الجاذبية الصغرى (0G)، تفتقر"
-              " الحرائق إلى ظاهرة الحمل الحراري الأرضي (Buoyancy)، مما يجعل"
-              " اللهب يتخذ شكلاً كروياً ونقياً.\n- تعتمد سرعة انتشار اللهب"
-              " بشكل أساسي على تركيز الأكسجين والضغط المحيط في الكبسولة.\n-"
-              " توفر منصتنا مراقبة تنبؤية فورية لضمان سلامة الرواد والكبسولة."
+              "🔥 **[قاعدة معارف ناسا - Flame in Freefall]**\n"
+              "- في بيئة الجاذبية الصغرى (0G)، يفتقر الاحتراق لظاهرة الحمل الحراري"
+              " الأرضي (Buoyancy)، فيتخذ اللهب شكلاً كروياً ونقياً.\n"
+              "- تعتمد سرعة انتشار اللهب على تركيز الأكسجين والضغط داخل الكبسولة.\n"
+              "- منصتنا توفر مراقبة تنبؤية فورية لضمان سلامة رواد الفضاء."
           )
 
-        # إذا لم يتم العثور على كلمة مفتاحية محددة
+        # إذا لم يتم العثور على مطابقة مخصصة، نعطي رداً شاملاً ذكياً
         if not response_chunks:
           response_chunks.append(
-              "💡 **[Low G Autonomous Agent]**\nلقد قمت بتحليل طلبك بنجاح."
-              " يمكنك سؤالي عن:\n1. تفاصيل أي تجربة أو رقم تيليمتري في ملف"
-              " الإكسيل.\n2. أعضاء فريق Low G ومصمم النظام (Eng. Karim"
-              " Magdy).\n3. تقارير ومؤشرات Power BI.\n4. فيزياء الاحتراق"
-              " في الجاذبية الصغرى ومعايير ناسا."
+              "💡 **[رد تحليل Low G Agent]**\n"
+              f"لقد استقبلت سؤالك: *'{user_prompt}'*.\n"
+              "بناءً على قاعدة بيانات المشروع الحالية، يمكنك الاستفسار عن:\n"
+              "1. **التيليمتري والتجارب** (اكتب اسم الوقود أو التجربة).\n"
+              "2. **أعضاء فريق Low G** ومصمم النظام (Eng. Karim Magdy).\n"
+              "3. **تقارير Power BI التنفيذية**.\n"
+              "4. **فيزياء الاحتراق في الجاذبية الصغرى (0G)**."
           )
 
-        final_bot_reply = "\n\n---\n\n".join(response_chunks)
-        st.markdown(final_bot_reply)
+        final_reply = "\n\n---\n\n".join(response_chunks)
+        st.markdown(final_reply)
         st.session_state.local_agent_msgs.append(
-            {"role": "assistant", "content": final_bot_reply}
+            {"role": "assistant", "content": final_reply}
         )
 
 # 7. Honorable Mentions
