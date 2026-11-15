@@ -306,9 +306,104 @@ with tab2:
         "⚠️ لم يتم العثور على صور بصيغة PNG أو JPG في المجلد الرئيسي. تأكد"
         " من رفع الصور بجانب ملف app.py على GitHub."
     )
-# --- Tab 3: مساعد الذكاء الاصطناعي التفاعلي الذكي ---
-# --- Tab 3: Low G Multi-Source Intelligence Agent ---
+# --- Tab 3: OpenAI GPT Intelligent Agent ---
 with tab3:
+  st.markdown(
+      "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
+      " 15px;'>🤖 NASA OpenAI GPT Intelligence Agent</h3>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #94a3b8; font-size: 0.9rem; margin-bottom: 20px;'>مساعد"
+      " ذكي مدعوم بنماذج GPT الحديثة، متصل بقاعدة تيليمتري التجارب ومعارف"
+      " ناسا لاحتراق الفضاء.</p>",
+      unsafe_allow_html=True,
+  )
+
+  # استيراد مكتبة OpenAI
+  try:
+    from openai import OpenAI
+
+    # جلب مفتاح API من إعدادات Streamlit Secrets أو وضعه مباشرة للاختبار
+    api_key = (
+        st.secrets.get("OPENAI_API_KEY", "")
+        if hasattr(st, "secrets")
+        else ""
+    )
+
+    if not api_key:
+      api_key = st.text_input(
+          "أدخل مفتاح OpenAI API Key الخاص بك لتفعيل الشات:", type="password"
+      )
+
+    if api_key:
+      client = OpenAI(api_key=api_key)
+
+      # تهيئة سجل الشات
+      if "openai_messages" not in st.session_state:
+        # تجهيز ملخص مختصر للداتابيز ليعرفه الـ AI مسبقاً
+        db_summary = (
+            df.head(5).to_string() if not df.empty else "No data loaded"
+        )
+        st.session_state.openai_messages = [{
+            "role": "system",
+            "content": (
+                "أنت خبير ذكاء اصطناعي ومساعد رسمي لتفويض فريق Low G في تحدي"
+                " ناسا سبايس أبس (مشروع Flame in Freefall). مصمم الداشبورد"
+                " هو المهندس كريم مجدي، وباقي أعضاء الفريق هم (عبدالعزيز،"
+                " أروى، كريم، هاشم، أمينة). مهمتك هي تحليل تيليمتري التجارب"
+                " والإجابة بدقة علمية عن احتراق الجاذبية الصغرى ومعايير الأمان."
+                f"\n\nعينة من بيانات تيليمتري التجارب الحالية:\n{db_summary}"
+            ),
+        }]
+
+      # عرض الرسائل السابقة
+      for message in st.session_state.openai_messages:
+        if message["role"] != "system":
+          with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+      # استقبال السؤال الجديد
+      if user_query := st.chat_input(
+          "اسأل GPT عن التيليمتري، سلوك الحريق، أو تفاصيل المشروع..."
+      ):
+        st.session_state.openai_messages.append(
+            {"role": "user", "content": user_query}
+        )
+        with st.chat_message("user"):
+          st.markdown(user_query)
+
+        with st.chat_message("assistant"):
+          with st.spinner("جاري التفكير والتواصل مع نموذج GPT..."):
+            try:
+              # استدعاء نموذج OpenAI الحديث
+              response = client.chat.completions.create(
+                  model="gpt-4o-mini",  # نموذج سريع واقتصادي وقوي جداً
+                  messages=st.session_state.openai_messages,
+                  temperature=0.7,
+              )
+              ai_reply = response.choices[0].message.content
+              st.markdown(ai_reply)
+              st.session_state.openai_messages.append(
+                  {"role": "assistant", "content": ai_reply}
+              )
+            except Exception as e:
+              st.error(
+                  f"حدث خطأ أثناء الاتصال بخادم OpenAI: {e}. تأكد من صحة الـ API"
+                  " Key."
+              )
+    else:
+      st.info(
+          "ℹ️ يرجى إدخال مفتاح OpenAI API Key أعلاه لتشغيل المساعد الذكي الحقيقي."
+          " (يمكنك حفظه لاحقاً في Streamlit Secrets ليعمل تلقائياً على"
+          " الإنترنت)."
+      )
+
+  except ImportError:
+    st.error(
+        "⚠️ مكتبة openai غير مثبتة. تأكد من إضافتها في ملف requirements.txt"
+        " وإعادة نشر التطبيق."
+    )
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
       " 15px;'>🤖 Low G Multi-Source Intelligence Agent</h3>",
