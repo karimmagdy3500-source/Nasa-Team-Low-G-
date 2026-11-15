@@ -306,6 +306,7 @@ with tab2:
     st.warning("⚠️ لم يتم العثور على صور مرفوعة في المجلد الرئيسي.")
 
 # --- Tab 3: Low G Autonomous Intelligence Agent (Local & Fast) ---
+# --- Tab 3: Low G Autonomous Intelligence Agent (Local & Fast) ---
 with tab3:
   st.markdown(
       "<h3 style='font-size: 1.25rem; font-weight: 600; margin-bottom:"
